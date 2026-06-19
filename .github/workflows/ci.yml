@@ -1,0 +1,61 @@
+name: 🔮 CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  merge_group:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    permissions: {}
+    concurrency:
+      group: ${{ github.workflow }}-tests-${{ github.ref_name }}-${{ github.event.pull_request.number || github.sha }}
+      cancel-in-progress: true
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: password
+        volumes:
+          - /var/run/postgresql:/var/run/postgresql
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+    - uses: ./.github/actions/setup
+    - name: 🤹 Django tests
+      run: make test
+
+  quality:
+    runs-on: ubuntu-latest
+    permissions: {}
+    concurrency:
+      group: ${{ github.workflow }}-quality-${{ github.ref_name }}-${{ github.event.pull_request.number || github.sha }}
+      cancel-in-progress: true
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: password
+        volumes:
+          - /var/run/postgresql:/var/run/postgresql
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+    - uses: ./.github/actions/setup
+    - name: ✨ Verify quality
+      run: make quality
+    - name: ✨ Verify DB initialization (migrations, fixtures, ...)
+      run: uv run manage.py migrate

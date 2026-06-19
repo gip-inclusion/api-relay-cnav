@@ -1,0 +1,38 @@
+name: 'Setup CI'
+description: 'Setup everything for the CI to run'
+runs:
+  using: "composite"
+  steps:
+    - name: Setup PostgreSQL environment
+      run: |
+        echo PGHOST=/var/run/postgresql >> $GITHUB_ENV
+        echo PGUSER=postgres >> $GITHUB_ENV
+      shell: bash
+    - name: 🐘 Non-durable PostgreSQL
+      run: |
+        psql <<SQL
+          ALTER SYSTEM SET fsync=off;
+          ALTER SYSTEM SET synchronous_commit=off;
+          ALTER SYSTEM SET full_page_writes=off;
+        SQL
+        docker kill --signal=SIGHUP ${{ job.services.postgres.id }}
+      shell: bash
+    - name: 💾 Create a database to check migrations
+      run: |
+        psql <<SQL
+            CREATE DATABASE api_relay_cnav;
+        SQL
+      shell: bash
+    - name: ⏬ Install uv
+      uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+      with:
+        enable-cache: true
+        activate-environment: true
+    - name: 📥 Install dependencies
+      run: |
+        make venv
+        echo DJANGO_DB_HOST=$PGHOST >> $GITHUB_ENV
+      shell: bash
+    - name: 💾 Collect static files
+      run: uv run manage.py collectstatic --no-input
+      shell: bash
