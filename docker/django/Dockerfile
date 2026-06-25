@@ -47,3 +47,26 @@ USER api_relay_cnav
 EXPOSE 8000
 
 ENTRYPOINT ["/entrypoint.sh"]
+
+
+# ---- Dev Image ----
+FROM final_image AS dev_image
+
+USER root
+
+ENV UV_CACHE_DIR=/app/.cache/uv
+
+COPY --from=uv_image /uv /bin
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    make \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY Makefile manage.py /app/
+
+# Install dev dependencies on top of the prod venv (image is built --no-dev)
+RUN uv sync --frozen
+
+# Let the runtime user write to /app (venv re-sync, collected static, etc.)
+RUN chown -R api_relay_cnav: /app
+
+USER api_relay_cnav
