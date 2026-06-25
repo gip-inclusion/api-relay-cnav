@@ -54,7 +54,8 @@ FROM final_image AS dev_image
 
 USER root
 
-ENV UV_CACHE_DIR=/app/.cache/uv
+# Set HOME early so the build-time `uv sync` (run as root) and the runtime user resolve uv cache to the same place
+ENV HOME=/home/api_relay_cnav
 
 COPY --from=uv_image /uv /bin
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -66,7 +67,21 @@ COPY Makefile manage.py /app/
 # Install dev dependencies on top of the prod venv (image is built --no-dev)
 RUN uv sync --frozen
 
-# Let the runtime user write to /app (venv re-sync, collected static, etc.)
-RUN chown -R api_relay_cnav: /app
+# Persist bash, python & ipython state across restarts
+ENV HISTFILE=/home/api_relay_cnav/.local/state/bash_history \
+    PYTHON_HISTORY=/home/api_relay_cnav/.local/state/python_history \
+    IPYTHONDIR=/home/api_relay_cnav/.local/state/ipython
+
+# Add bash history tweaks
+RUN mkdir -p /home/api_relay_cnav/.local/state \
+    && echo '# Append to the history file instead of overwriting it on exit' > /home/api_relay_cnav/.bashrc \
+    && echo 'shopt -s histappend' >> /home/api_relay_cnav/.bashrc \
+    && echo '# Ignore duplicate commands and erase older duplicates' >> /home/api_relay_cnav/.bashrc \
+    && echo 'export HISTCONTROL=ignoredups:erasedups' >> /home/api_relay_cnav/.bashrc \
+    && echo '# Flush each command to the history file immediately, not only on exit' >> /home/api_relay_cnav/.bashrc \
+    && echo 'PROMPT_COMMAND="history -a"' >> /home/api_relay_cnav/.bashrc
+
+# Final chown
+RUN chown -R api_relay_cnav: /app /home/api_relay_cnav
 
 USER api_relay_cnav
