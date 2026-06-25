@@ -46,6 +46,7 @@ services:
       - ./README.md:/app/README.md
       - ./pyproject.toml:/app/pyproject.toml
       - ./uv.lock:/app/uv.lock
+      - dev_data:/home/api_relay_cnav/.local/state
     ports:
       - "127.0.0.1:${DJANGO_PORT_ON_DOCKER_HOST:-8000}:8000"
     # Make interactive debugging possible.
@@ -57,3 +58,4 @@ services:
 
 volumes:
   postgres_data:
+  dev_data:
