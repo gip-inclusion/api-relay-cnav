@@ -72,6 +72,10 @@ select = [
     "W",  # pycodestyle warnings
 ]
 
+[tool.ruff.lint.per-file-ignores]
+"**/migrations/**" = ["E501"]
+"tests/**" = ["ANN"]
+
 [tool.ruff.lint.isort]
 combine-as-imports = true
 known-first-party = ["api_relay_cnav"]
