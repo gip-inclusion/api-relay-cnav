@@ -53,6 +53,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # Project apps
+    "api_relay_cnav.users",
 ]
 if ENVIRONMENT is Environment.DEV:
     INSTALLED_APPS.append("debug_toolbar")
@@ -138,6 +140,12 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
+
+
+# Custom user model
+# https://docs.djangoproject.com/en/6.0/topics/auth/customizing/#auth-custom-user
+
+AUTH_USER_MODEL = "users.User"
 
 
 LANGUAGE_CODE = "fr-FR"
