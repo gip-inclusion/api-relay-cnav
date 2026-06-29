@@ -83,6 +83,8 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # No-op unless this pod uses Authentik forwardAuth (gated by AUTHENTIK_FORWARD_AUTH).
+    "api_relay_cnav.users.middleware.AuthentikRemoteUserMiddleware",
     "django.contrib.auth.middleware.LoginRequiredMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -106,6 +108,7 @@ match SERVICE, ENVIRONMENT:
         ROOT_URLCONF = "api_relay_cnav.urls_backoffice"
     case Service.API, _:
         raise ImproperlyConfigured("The API service is not implemented yet.")
+
 
 TEMPLATES = [
     {
@@ -249,3 +252,16 @@ SPECTACULAR_SETTINGS = {
 }
 
 HASHED_API_TOKEN = env.str("HASHED_API_TOKEN") if ENVIRONMENT is Environment.PROD else token_hexdigest("Secret-Token")
+
+
+# Authentik forwardAuth (backoffice auth)
+# AuthentikRemoteUserMiddleware is always present in MIDDLEWARE but is a no-op unless this flag is set
+AUTHENTIK_FORWARD_AUTH = ENVIRONMENT is Environment.PROD and SERVICE is Service.BACKOFFICE
+AUTHENTIK_CREATE_UNKNOWN_USER = env.bool("AUTHENTIK_CREATE_UNKNOWN_USER", default=True)
+
+if AUTHENTIK_FORWARD_AUTH:
+    # No password login authorized in prod: Authentik (RemoteUser) is the only backend
+    AUTHENTICATION_BACKENDS = ["api_relay_cnav.users.backends.AuthentikRemoteUserBackend"]
+
+    # Redirect the admin logout to Authentik's sign-out (a local logout alone is useless behind forwardAuth)
+    LOGOUT_REDIRECT_URL = env.str("AUTHENTIK_LOGOUT_URL")
