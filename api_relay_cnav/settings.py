@@ -265,3 +265,26 @@ if AUTHENTIK_FORWARD_AUTH:
 
     # Redirect the admin logout to Authentik's sign-out (a local logout alone is useless behind forwardAuth)
     LOGOUT_REDIRECT_URL = env.str("AUTHENTIK_LOGOUT_URL")
+
+# Security improvements behind the reverse proxy in PROD (Traefik)
+if ENVIRONMENT is Environment.PROD:
+    # Trust the proxy's X-Forwarded-Proto
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    USE_X_FORWARDED_HOST = True
+
+    # Traefik already redirects HTTP to HTTPS
+    SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=False)
+    # Keep plain-HTTP probes working if the redirect is enabled
+    SECURE_REDIRECT_EXEMPT = [r"^healthcheck/"]
+
+    # Force secure cookies storage
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
+    # Make HSTS configurable (still disabled by default)
+    SECURE_HSTS_SECONDS = env.int("SECURE_HSTS_SECONDS", default=0)
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", default=False)
+    SECURE_HSTS_PRELOAD = env.bool("SECURE_HSTS_PRELOAD", default=False)
+
+    # Origins allowed for CSRF (admin forms on the backoffice domain)
+    CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
