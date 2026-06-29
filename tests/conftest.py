@@ -1,5 +1,6 @@
 import pytest
 from django.db import connections
+from django.test import Client
 from drf_standardized_errors.handler import ExceptionHandler
 
 
@@ -19,6 +20,15 @@ def api_client():
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION="Token Secret-Token")
     return client
+
+
+@pytest.fixture
+def backoffice_client(settings):
+    """Test client hitting the backoffice urlconf with Authentik forwardAuth active."""
+    settings.ROOT_URLCONF = "api_relay_cnav.urls_backoffice"
+    settings.AUTHENTIK_FORWARD_AUTH = True
+    settings.AUTHENTICATION_BACKENDS = ["api_relay_cnav.users.backends.AuthentikRemoteUserBackend"]
+    return Client()
 
 
 # Do not rollback non_atomic_requests views
