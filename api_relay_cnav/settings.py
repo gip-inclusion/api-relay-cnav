@@ -15,6 +15,7 @@ import os
 from pathlib import Path
 
 import environ
+from django.core.exceptions import ImproperlyConfigured
 from django.utils.csp import CSP
 
 from api_relay_cnav.utils.token import token_hexdigest
@@ -27,10 +28,18 @@ class Environment(enum.StrEnum):
     DEV = "DEV"
 
 
+class Service(enum.StrEnum):
+    ALL = "ALL"
+    BACKOFFICE = "BACKOFFICE"
+    API = "API"
+
+
 env = environ.FileAwareEnv()
 
 env.prefix = "DJANGO_"
 ENVIRONMENT = Environment(env.str("ENVIRONMENT", choices=Environment))
+SERVICE = Service(env.str("SERVICE", choices=Service, default=Service.ALL))
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -85,7 +94,18 @@ if ENVIRONMENT is Environment.DEV:
     MIDDLEWARE.append("debug_toolbar.middleware.DebugToolbarMiddleware")
 
 
-ROOT_URLCONF = "api_relay_cnav.urls"
+# Per-service URL routing.
+# SERVICE=ALL (the DEV/TEST default) serves every service from one process via the combined urlconf
+# Each production pod serves a single service
+match SERVICE, ENVIRONMENT:
+    case Service.ALL, Environment.PROD:
+        raise ImproperlyConfigured("A production pod must set DJANGO_SERVICE to BACKOFFICE or API.")
+    case Service.ALL, _:
+        ROOT_URLCONF = "api_relay_cnav.urls"
+    case Service.BACKOFFICE, _:
+        ROOT_URLCONF = "api_relay_cnav.urls_backoffice"
+    case Service.API, _:
+        raise ImproperlyConfigured("The API service is not implemented yet.")
 
 TEMPLATES = [
     {

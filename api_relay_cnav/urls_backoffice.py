@@ -2,9 +2,8 @@ from django.contrib import admin
 from django.urls import include, path
 
 
-# Combined urlconf (SERVICE=ALL): serves all services from one process in DEV/TEST.
+# URLconf for the "backoffice" pod (behind Authentik forwardAuth)
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("healthcheck/", include("api_relay_cnav.healthcheck.urls")),
-    path("api/", include("api_relay_cnav.api.urls")),
 ]
