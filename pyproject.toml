@@ -50,6 +50,7 @@ addopts = [
 
 [tool.pytest_env]
 DJANGO_ENVIRONMENT = "TEST"
+DJANGO_SERVICE = "ALL"
 
 [tool.ruff]
 line-length = 119
