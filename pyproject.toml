@@ -8,6 +8,8 @@ dependencies = [
     "django-environ>=0.14",
     "django==6.0.*",
     "djangorestframework>=3.17",
+    "drf-spectacular>=0.29",
+    "drf-standardized-errors[openapi]>=0.16",
     "httpx>=0.28",
     "itoutils[django]>=25.12.22.0",
     "psycopg[binary]>=3.2",
