@@ -15,6 +15,7 @@ import os
 from pathlib import Path
 
 import environ
+from django.utils.csp import CSP
 
 
 class Environment(enum.StrEnum):
@@ -70,6 +71,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.LoginRequiredMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django.middleware.csp.ContentSecurityPolicyMiddleware",
     # Final logger
     "django_datadog_logger.middleware.request_log.RequestLoggingMiddleware",
 ]
@@ -146,6 +148,14 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/6.0/topics/auth/customizing/#auth-custom-user
 
 AUTH_USER_MODEL = "users.User"
+
+
+SECURE_CSP = {
+    "default-src": [CSP.NONE],
+    "img-src": [CSP.SELF],
+    "script-src-elem": [CSP.SELF],
+    "style-src": [CSP.SELF],
+}
 
 
 LANGUAGE_CODE = "fr-FR"
