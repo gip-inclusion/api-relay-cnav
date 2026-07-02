@@ -1,0 +1,47 @@
+# serializer version: 1
+# name: test_client[request content]
+  '''
+  <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                    xmlns:impl="http://impl.ws.consultation.sngi.identification.isic.cnav/"
+                    xmlns:giaw="http://www.GIAWBS01.Request.com">
+    <soapenv:Header/>
+    <soapenv:Body>
+      <impl:identification>
+        <arg0>
+          <giaw:G-EnTeteMessage>
+            <giaw:T-EmetteurMessage>
+              <giaw:CdOrgNtl>1234</giaw:CdOrgNtl>
+              <giaw:LbOrgNtl>Notre organisation</giaw:LbOrgNtl>
+            </giaw:T-EmetteurMessage>
+            <giaw:VersionWsdl>0300</giaw:VersionWsdl>
+            <giaw:T-SouhaitsClient>
+              <giaw:ChxRestLibCd>O</giaw:ChxRestLibCd>
+              <giaw:ChxRestLibOrg>O</giaw:ChxRestLibOrg>
+              <giaw:ChxRestInfSNGI>010100110000000</giaw:ChxRestInfSNGI>
+            </giaw:T-SouhaitsClient>
+            <giaw:T-ContexteEchange>
+              <giaw:App>SNGI</giaw:App>
+              <giaw:Proc>TP</giaw:Proc>
+              <giaw:TypMsg>411</giaw:TypMsg>
+              <giaw:CdCor>0</giaw:CdCor>
+            </giaw:T-ContexteEchange>
+          </giaw:G-EnTeteMessage>
+          <giaw:G-DonneesMetier>
+            <giaw:G-OperationPersonne>
+              <giaw:G-InfosPersonnePourIdent>
+                <giaw:T-DdeIdentiteAssure>
+                  <giaw:NumAsrDemId>1234567890123</giaw:NumAsrDemId>
+  <giaw:NmAsrDemId>Martin</giaw:NmAsrDemId>
+  <giaw:DtNaiDem>01011990</giaw:DtNaiDem>
+  <giaw:LstPrnAsrDemId>Jean Paul François</giaw:LstPrnAsrDemId>
+  <giaw:CdSexDem>1</giaw:CdSexDem>
+                </giaw:T-DdeIdentiteAssure>
+              </giaw:G-InfosPersonnePourIdent>
+            </giaw:G-OperationPersonne>
+          </giaw:G-DonneesMetier>
+        </arg0>
+      </impl:identification>
+    </soapenv:Body>
+  </soapenv:Envelope>
+  '''
+# ---
