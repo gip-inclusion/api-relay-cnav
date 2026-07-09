@@ -16,7 +16,7 @@ jobs:
       cancel-in-progress: true
     services:
       postgres:
-        image: postgres:18
+        image: postgres:17
         env:
           POSTGRES_PASSWORD: password
         volumes:
@@ -41,7 +41,7 @@ jobs:
       cancel-in-progress: true
     services:
       postgres:
-        image: postgres:18
+        image: postgres:17
         env:
           POSTGRES_PASSWORD: password
         volumes:
