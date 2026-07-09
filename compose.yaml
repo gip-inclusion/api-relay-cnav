@@ -3,7 +3,7 @@ services:
   # https://hub.docker.com/r/mdillon/postgis/tags
   postgres:
     container_name: api_relay_cnav_postgres
-    image: postgres:18
+    image: postgres:17
     # Disable some safety switches for a faster postgres: https://www.postgresql.org/docs/current/non-durability.html
     command: -c fsync=off -c full_page_writes=off -c synchronous_commit=off
     environment:
