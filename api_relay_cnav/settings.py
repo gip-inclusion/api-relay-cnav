@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     "drf_standardized_errors",
     # Project apps
     "api_relay_cnav.users",
+    "api_relay_cnav.utils",
 ]
 if ENVIRONMENT is Environment.DEV:
     INSTALLED_APPS.append("debug_toolbar")
@@ -127,6 +128,9 @@ DATABASES = {
         },
     }
 }
+
+# Application role receiving DML grants after each migrations run (see the grant_app_privileges command)
+DB_APP_ROLE = env.str("DB_APP_ROLE", default="")
 
 
 # Password validation
