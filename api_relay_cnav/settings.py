@@ -44,6 +44,8 @@ SERVICE = Service(env.str("SERVICE", choices=Service, default=Service.ALL))
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = env.str("SECRET_KEY") if ENVIRONMENT is Environment.PROD else "foobar"
+# Previous key, kept verifiable during one SECRET_KEY rotation cycle
+SECRET_KEY_FALLBACKS = [key for key in env.list("SECRET_KEY_FALLBACKS", default=[]) if key]
 
 _default_allow_list = []
 if ENVIRONMENT is Environment.DEV:
