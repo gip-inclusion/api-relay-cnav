@@ -17,6 +17,12 @@ class TestBackofficeRemoteAuth:
         response = backoffice_client.get(reverse("admin:index"))
         assert response.status_code == 302
 
+    def test_missing_header_drops_existing_session(self, backoffice_client):
+        backoffice_client.get(reverse("admin:index"), headers=HEADERS)
+        response = backoffice_client.get(reverse("admin:index"))
+        assert response.status_code == 302
+        assert response.wsgi_request.user.is_authenticated is False
+
     def test_email_change_keeps_a_single_account(self, backoffice_client):
         backoffice_client.get(reverse("admin:index"), headers=HEADERS)
         backoffice_client.get(reverse("admin:index"), headers=HEADERS | {"x-authentik-email": "new@inclusion.gouv.fr"})
