@@ -9,6 +9,18 @@ def test_GET(api_client):
     assert response.status_code == 405
 
 
+def test_missing_token(api_client):
+    api_client.credentials()  # Flush default credentials
+    response = api_client.post(reverse("api:identity"), data={})
+    assert response.status_code == 401
+
+
+def test_wrong_token(api_client):
+    api_client.credentials(HTTP_AUTHORIZATION="Token Wrong-Token")
+    response = api_client.post(reverse("api:identity"), data={})
+    assert response.status_code == 401
+
+
 def test_mirror(api_client):
     data = {
         "request_uid": str(uuid.uuid4()),

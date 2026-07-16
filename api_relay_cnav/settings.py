@@ -17,6 +17,8 @@ from pathlib import Path
 import environ
 from django.utils.csp import CSP
 
+from api_relay_cnav.utils.token import token_hexdigest
+
 
 class Environment(enum.StrEnum):
     BUILD = "BUILD"
@@ -221,3 +223,5 @@ SPECTACULAR_SETTINGS = {
     },
     "POSTPROCESSING_HOOKS": ["drf_standardized_errors.openapi_hooks.postprocess_schema_enums"],
 }
+
+HASHED_API_TOKEN = env.str("HASHED_API_TOKEN") if ENVIRONMENT is Environment.PROD else token_hexdigest("Secret-Token")

@@ -3,6 +3,7 @@ from rest_framework import generics
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from api_relay_cnav.api.permissions import APIAuthentication, IsAPIAnonymousUser
 from api_relay_cnav.api.serializers import IdentitySerializer
 
 
@@ -19,8 +20,8 @@ from api_relay_cnav.api.serializers import IdentitySerializer
     )
 )
 class IdentityView(generics.GenericAPIView):
-    authentication_classes = []  # TODO
-    permission_classes = []  # TODO
+    authentication_classes = [APIAuthentication]
+    permission_classes = [IsAPIAnonymousUser]
     serializer_class = IdentitySerializer
     throttle_classes = []  # TODO
 
