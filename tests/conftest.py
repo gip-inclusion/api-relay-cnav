@@ -14,4 +14,6 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
 def api_client():
     from rest_framework.test import APIClient
 
-    return APIClient()
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION="Token Secret-Token")
+    return client
