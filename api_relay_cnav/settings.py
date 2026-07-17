@@ -109,7 +109,7 @@ match SERVICE, ENVIRONMENT:
     case Service.BACKOFFICE, _:
         ROOT_URLCONF = "api_relay_cnav.urls_backoffice"
     case Service.API, _:
-        raise ImproperlyConfigured("The API service is not implemented yet.")
+        ROOT_URLCONF = "api_relay_cnav.urls_api"
 
 
 TEMPLATES = [
@@ -253,7 +253,14 @@ SPECTACULAR_SETTINGS = {
     "POSTPROCESSING_HOOKS": ["drf_standardized_errors.openapi_hooks.postprocess_schema_enums"],
 }
 
-HASHED_API_TOKEN = env.str("HASHED_API_TOKEN") if ENVIRONMENT is Environment.PROD else token_hexdigest("Secret-Token")
+# Only the API service authenticates against this token.
+if ENVIRONMENT is Environment.PROD:
+    # The API pod reads it from the env and other PROD pods never serve the API
+    # So keep it unusable ("" never equals a sha512 digest)
+    HASHED_API_TOKEN = env.str("HASHED_API_TOKEN") if SERVICE is Service.API else ""
+else:
+    # DEV/TEST default
+    HASHED_API_TOKEN = token_hexdigest("Secret-Token")
 
 
 # Authentik forwardAuth (backoffice auth)
