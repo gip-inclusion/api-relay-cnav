@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from api_relay_cnav.api.permissions import APIAuthentication, IsAPIAnonymousUser
 from api_relay_cnav.api.serializers import IdentitySerializer
 from api_relay_cnav.audits.models import InterOpsCall
+from api_relay_cnav.rate_limit.throttling import BurstThrottle, LongThrottle
 from api_relay_cnav.utils.interops import get_client, parse_response
 
 
@@ -37,7 +38,7 @@ class IdentityView(generics.GenericAPIView):
     authentication_classes = [APIAuthentication]
     permission_classes = [IsAPIAnonymousUser]
     serializer_class = IdentitySerializer
-    throttle_classes = []  # TODO
+    throttle_classes = [BurstThrottle, LongThrottle]
 
     def post(self, request: Request) -> Response:
         self.request_serializer = self.get_serializer(data=request.data)
