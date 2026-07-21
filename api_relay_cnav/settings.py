@@ -229,3 +229,18 @@ SPECTACULAR_SETTINGS = {
 }
 
 HASHED_API_TOKEN = env.str("HASHED_API_TOKEN") if ENVIRONMENT is Environment.PROD else token_hexdigest("Secret-Token")
+
+INTEROPS_BASE_URL = env.str(
+    "INTEROPS_BASE_URL", default=env.NOTSET if ENVIRONMENT is Environment.PROD else "http://localhost:8081"
+)
+INTEROPS_ORGANIZATION_CODE = env.int(
+    "INTEROPS_ORGANIZATION_CODE", default=env.NOTSET if ENVIRONMENT is Environment.PROD else 1234
+)
+INTEROPS_ORGANIZATION_LABEL = env.str(
+    "INTEROPS_ORGANIZATION_LABEL", default=env.NOTSET if ENVIRONMENT is Environment.PROD else "Notre organisation"
+)
+INTEROPS_SUBJECT_ID = env.str(
+    "INTEROPS_SUBJECT_ID",
+    default=env.NOTSET if ENVIRONMENT is Environment.PROD else "urn:interops:1234567890:idp:emplois_cnav",
+)
+INTEROPS_IDENTITY_PATH = env.str("INTEROPS_IDENTITY_PATH", default="/PAC-AWSICONSL/AWSICONSL/QAL1/V1")

@@ -13,6 +13,7 @@ from api_relay_cnav.utils.interops import (
     Name,
     PersonalInfos,
     death_date,
+    get_client,
     get_other_names,
     number_history,
     parse_response,
@@ -513,3 +514,18 @@ class TestGetOtherNames:
             "common_name": Name(accented=None, filtered="DUVAL"),
             "marital_name": Name(accented=None, filtered="MARY"),
         }
+
+
+def test_get_client(settings):
+    settings.INTEROPS_BASE_URL = "http://base.url"
+    settings.INTEROPS_ORGANIZATION_CODE = 4321
+    settings.INTEROPS_ORGANIZATION_LABEL = "Label de 4321"
+    settings.INTEROPS_SUBJECT_ID = "urn"
+    settings.INTEROPS_IDENTITY_PATH = "/path/to/identity/"
+
+    client = get_client()
+    assert client.base_url == "http://base.url"
+    assert client.org_code == 4321
+    assert client.org_label == "Label de 4321"
+    assert client.subject_id == "urn"
+    assert client.identity_path == "/path/to/identity/"
