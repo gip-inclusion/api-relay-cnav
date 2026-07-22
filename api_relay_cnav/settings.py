@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "drf_standardized_errors",
     # Project apps
+    "api_relay_cnav.audits",
     "api_relay_cnav.users",
     "api_relay_cnav.utils",
 ]
