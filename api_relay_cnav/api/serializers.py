@@ -76,8 +76,8 @@ class IdentitySerializer(serializers.Serializer):
 
     # Response fields
     infos = InfosSerializer(label="Infos de l’assuré", required=False, read_only=True)
-    result_code = serializers.IntegerField(label="Code réponse", read_only=True)
-    result_label = serializers.CharField(label="Label réponse", read_only=True)
+    result_code = serializers.IntegerField(label="Code réponse", read_only=True, source="code")
+    result_label = serializers.CharField(label="Label réponse", read_only=True, source="label")
 
     def validate_number(self, value: str) -> str:
         if not re.match(NUMBER_REGEX, value) or value[-3:] == "000":

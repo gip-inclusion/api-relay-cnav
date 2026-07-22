@@ -1,6 +1,8 @@
 import datetime
 import random
+import string
 import uuid
+from xml.sax.saxutils import escape
 
 import factory
 import factory.fuzzy
@@ -83,3 +85,48 @@ def wrap_sngi_result(sngi_result):
            </ns1:identificationResponse>
          </ns0:Body>
        </ns0:Envelope>"""
+
+
+class IdentityInterOpsResponseContentFactory(factory.DictFactory):
+    birth_name = factory.Faker("last_name")
+    first_names = factory.Faker("first_name")
+    birth_date = factory.fuzzy.FuzzyDate(datetime.date(1968, 1, 1), datetime.date(1999, 12, 31))
+    birth_place = factory.fuzzy.FuzzyText(length=5, chars=string.digits)
+    sex_code = factory.fuzzy.FuzzyChoice([1, 2])
+
+    @factory.lazy_attribute
+    def number(self):
+        return generate_number(birth_date=self.birth_date, sex_code=self.sex_code)
+
+
+def fake_interops_identity_response(*, number, birth_name, first_names, birth_date, birth_place, sex_code):
+    sex_label = {1: "Masculin", 2: "Féminin"}[sex_code]
+    # Simple & limited filtering algorithm, but good enough
+    filtered_birth_name = birth_name.encode("ascii", "ignore").decode().upper()
+    filtered_first_names = first_names.encode("ascii", "ignore").decode().upper()
+
+    return wrap_sngi_result(f"""\
+         <ns2:T-ResIdentiteAssure>
+           <ns2:NumAsrRes>{number}</ns2:NumAsrRes>
+           <ns2:NmAsrFltrRes>{escape(filtered_birth_name)}</ns2:NmAsrFltrRes>
+           <ns2:LstPrnAsrFltrRes>{escape(filtered_first_names)}</ns2:LstPrnAsrFltrRes>
+           <ns2:NmAsrAccRes>{escape(birth_name)}</ns2:NmAsrAccRes>
+           <ns2:LstPrnAsrAccRes>{escape(first_names)}</ns2:LstPrnAsrAccRes>
+           <ns2:CdSexRes>{sex_code}</ns2:CdSexRes>
+           <ns2:LibCdSexRes>{sex_label}</ns2:LibCdSexRes>
+           <ns2:DtNaiRes>{birth_date.strftime("%d%m%Y")}</ns2:DtNaiRes>
+           <ns2:CdLieNaiRes>{birth_place}</ns2:CdLieNaiRes>
+           <ns2:LibDepNaiRes>NON UTILISE</ns2:LibDepNaiRes>
+           <ns2:LibCmnNaiRes>NON UTILISER</ns2:LibCmnNaiRes>
+           <ns2:LibPayNaiRes xsi:nil="true" />
+           <ns2:LibLocNaiRes xsi:nil="true" />
+           <ns2:CdCertEclRes>3</ns2:CdCertEclRes>
+           <ns2:LibCdCertEclRes>Reconnu par l'INSEE</ns2:LibCdCertEclRes>
+           <ns2:DtoEclRes>25112024</ns2:DtoEclRes>
+           <ns2:CodMnlPayNaiRes>F</ns2:CodMnlPayNaiRes>
+           <ns2:LibMnlPayNaiRes>FRANCE</ns2:LibMnlPayNaiRes>
+           <ns2:CodPceEclRes xsi:nil="true" />
+           <ns2:LibPceEclRes xsi:nil="true" />
+           <ns2:DtCertif />
+         </ns2:T-ResIdentiteAssure>
+       """)
