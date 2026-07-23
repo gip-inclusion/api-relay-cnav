@@ -30,3 +30,56 @@ class IdentityRequestFactory(factory.DictFactory):
     @factory.lazy_attribute
     def number(self):
         return generate_number(birth_date=self.birth_date)
+
+
+def wrap_sngi_result(sngi_result):
+    return f"""\
+       <ns0:Envelope xmlns:ns0="http://schemas.xmlsoap.org/soap/envelope/"
+                     xmlns:ns1="http://impl.ws.consultation.sngi.identification.isic.cnav/"
+                     xmlns:ns2="http://www.GIAWBS01.Response.com"
+                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+         <ns0:Body>
+           <ns1:identificationResponse>
+             <return>
+               <ns2:G-EnTeteMessage>
+                 <ns2:T-EmetteurMessage>
+                   <ns2:CdOrgNtl>18</ns2:CdOrgNtl>
+                   <ns2:LbOrgNtl>CNAV OPERATEUR</ns2:LbOrgNtl>
+                   <ns2:CdOrgGst xsi:nil="true" />
+                   <ns2:LbOrgGst xsi:nil="true" />
+                   <ns2:CdDmn xsi:nil="true" />
+                   <ns2:LbDmn xsi:nil="true" />
+                   <ns2:CdSi>18</ns2:CdSi>
+                   <ns2:LbSi>CNAV OPERATEUR</ns2:LbSi>
+                 </ns2:T-EmetteurMessage>
+                 <ns2:VersionWsdl>300</ns2:VersionWsdl>
+                 <ns2:T-SouhaitsClient>
+                   <ns2:ZnCliEch xsi:nil="true" />
+                   <ns2:ChxRestLibCd>O</ns2:ChxRestLibCd>
+                   <ns2:ChxRestLibOrg>O</ns2:ChxRestLibOrg>
+                   <ns2:ChxRestInfSNGI>010100110000000</ns2:ChxRestInfSNGI>
+                 </ns2:T-SouhaitsClient>
+                 <ns2:T-ContexteEchange>
+                   <ns2:App>SNGI</ns2:App>
+                   <ns2:Proc>RESULTAT CONSULTATION</ns2:Proc>
+                   <ns2:TypMsg>411</ns2:TypMsg>
+                   <ns2:CdCor xsi:nil="true" />
+                 </ns2:T-ContexteEchange>
+               </ns2:G-EnTeteMessage>
+               <ns2:T-ResultatGlobal>
+                 <ns2:CdResTrtInfoGlo>1000</ns2:CdResTrtInfoGlo>
+                 <ns2:LibResTrtInfoGlo>R&#233;sultat OK</ns2:LibResTrtInfoGlo>
+                 <ns2:DtTrtRes>260706173613</ns2:DtTrtRes>
+                 <ns2:CodImmatriculable>1</ns2:CodImmatriculable>
+               </ns2:T-ResultatGlobal>
+               <ns2:G-DonneesMetierRes>
+                 <ns2:G-ResultatDonnees>
+                   <ns2:G-ResultatSNGI>
+                     {sngi_result}
+                   </ns2:G-ResultatSNGI>
+                 </ns2:G-ResultatDonnees>
+               </ns2:G-DonneesMetierRes>
+             </return>
+           </ns1:identificationResponse>
+         </ns0:Body>
+       </ns0:Envelope>"""
