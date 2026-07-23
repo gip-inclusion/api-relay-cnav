@@ -63,7 +63,7 @@ def identity_envelope(
     name: str,
     first_names: str | None = None,
     birth_date: datetime.date,
-    sex_code: str | None = None,
+    sex_code: Literal[1, 2] | None = None,
     requested_info: str,
 ) -> str:
     request_data = [
@@ -74,7 +74,7 @@ def identity_envelope(
     if first_names:
         request_data.append(f"<giaw:LstPrnAsrDemId>{escape(first_names)}</giaw:LstPrnAsrDemId>")
     if sex_code:
-        request_data.append(f"<giaw:CdSexDem>{escape(sex_code)}</giaw:CdSexDem>")
+        request_data.append(f"<giaw:CdSexDem>{escape(str(sex_code))}</giaw:CdSexDem>")
 
     return IDENTITY_CALL_CONTENT.format(
         org_code=str(org_code),
@@ -165,7 +165,7 @@ class InterOpsClient:
         *,
         name: str,
         first_names: str | None = None,
-        sex_code: str | None = None,
+        sex_code: Literal[1, 2] | None = None,
         birth_date: datetime.date,
     ) -> InterOpsExchange:
         content = identity_envelope(
