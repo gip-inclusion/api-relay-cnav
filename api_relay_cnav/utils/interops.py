@@ -157,7 +157,7 @@ class InterOpsClient:
             content=content,
             timeout=httpx.Timeout(5, read=60),
             headers=self.interops_infos_header(),
-        ).raise_for_status()
+        )
 
     def identity(
         self,
