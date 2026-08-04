@@ -28,6 +28,7 @@ runs:
       with:
         enable-cache: true
         activate-environment: true
+        prune-cache: true
     - name: 📥 Install dependencies
       run: |
         make venv
