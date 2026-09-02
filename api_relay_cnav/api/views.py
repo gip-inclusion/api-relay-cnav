@@ -1,10 +1,23 @@
+import dataclasses
+
+import httpx
+from django.db import transaction
+from django.utils.decorators import method_decorator
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from rest_framework import generics
+from rest_framework import generics, status
+from rest_framework.exceptions import APIException
 from rest_framework.request import Request
 from rest_framework.response import Response
 
 from api_relay_cnav.api.permissions import APIAuthentication, IsAPIAnonymousUser
 from api_relay_cnav.api.serializers import IdentitySerializer
+from api_relay_cnav.audits.models import InterOpsCall
+from api_relay_cnav.utils.interops import get_client, parse_response
+
+
+class InterOpsCommunicationException(APIException):
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    default_code = "interops-communication-error"
 
 
 @extend_schema_view(
@@ -19,6 +32,7 @@ from api_relay_cnav.api.serializers import IdentitySerializer
         examples=[],
     )
 )
+@method_decorator(transaction.non_atomic_requests, name="dispatch")
 class IdentityView(generics.GenericAPIView):
     authentication_classes = [APIAuthentication]
     permission_classes = [IsAPIAnonymousUser]
@@ -28,22 +42,36 @@ class IdentityView(generics.GenericAPIView):
     def post(self, request: Request) -> Response:
         self.request_serializer = self.get_serializer(data=request.data)
         self.request_serializer.is_valid(raise_exception=True)
-        # TODO:
-        # - perform SOAP call
-        # - store logs of call & result summary
-        # - return data
-        response_data = {
-            "result_code": 1000,
-            "result_label": "Résultat OK",
-            "infos": {
-                "number": self.request_serializer.validated_data.get("number"),
-                "birth_date": self.request_serializer.validated_data.get("birth_date"),
-                "birth_name": {"accented": self.request_serializer.validated_data.get("name")},
-                "sex_code": self.request_serializer.validated_data.get("sex_code"),
-                "first_names": {
-                    "accented": (self.request_serializer.validated_data.get("first_names") or "").split(" ")
-                },
-            },
-        }
-        response_serializer = self.get_serializer(response_data)
-        return Response(response_serializer.data)
+        request_content = self.request_serializer.validated_data
+        request_uid = request_content["request_uid"]
+        interops_exchange = None
+        response_content = None
+
+        client = get_client()
+        # Perform InterOps call
+        try:
+            interops_exchange = client.identity(
+                number=request_content["number"],
+                name=request_content.get("name"),
+                first_names=request_content.get("first_names"),
+                sex_code=request_content.get("sex_code"),
+                birth_date=request_content.get("birth_date"),
+            )
+        except httpx.HTTPError as exc:
+            raise InterOpsCommunicationException(detail=f"Error contacting InterOps: {exc}") from exc
+        # Only log request with a full InterOps exchange (ignore timeout & connection errors)
+        try:
+            interops_response = parse_response(interops_exchange.response)
+            response_data = dataclasses.asdict(interops_response)
+            response_serializer = self.get_serializer(response_data)
+            response_content = response_serializer.data
+        finally:
+            InterOpsCall.objects.create(
+                request_uid=request_uid,
+                request_content=request_content,
+                interops_request_content=interops_exchange.request,
+                interops_response_content=interops_exchange.response,
+                interops_response_status_code=interops_exchange.response_status_code,
+                response_content=response_content,
+            )
+        return Response(response_content)

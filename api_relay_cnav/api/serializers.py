@@ -60,8 +60,10 @@ class InfosSerializer(serializers.Serializer):
 class IdentitySerializer(serializers.Serializer):
     # Request fields
     request_uid = serializers.UUIDField(label="Identifiant de la requête", write_only=True, required=True)
-    number = serializers.CharField(label="Numéro d’assuré (NIR ou NIA)", min_length=13, max_length=13, write_only=True)
-    name = serializers.CharField(label="Nom de l’assuré", max_length=63, write_only=True, required=False)
+    number = serializers.CharField(
+        label="Numéro d’assuré (NIR ou NIA)", min_length=13, max_length=13, write_only=True, required=True
+    )
+    name = serializers.CharField(label="Nom de l’assuré", max_length=63, write_only=True, required=True)
     first_names = serializers.CharField(label="Prénoms de l’assuré", max_length=50, write_only=True, required=False)
     sex_code = serializers.IntegerField(
         label="Code sexe de l’assuré", min_value=1, max_value=2, write_only=True, required=False
@@ -69,13 +71,13 @@ class IdentitySerializer(serializers.Serializer):
     birth_date = serializers.DateField(
         label="Date de naissance de l’assuré  (ISO 8601)",
         write_only=True,
-        required=False,
+        required=True,
     )
 
     # Response fields
     infos = InfosSerializer(label="Infos de l’assuré", required=False, read_only=True)
-    result_code = serializers.IntegerField(label="Code réponse", read_only=True)
-    result_label = serializers.CharField(label="Label réponse", read_only=True)
+    result_code = serializers.IntegerField(label="Code réponse", read_only=True, source="code")
+    result_label = serializers.CharField(label="Label réponse", read_only=True, source="label")
 
     def validate_number(self, value: str) -> str:
         if not re.match(NUMBER_REGEX, value) or value[-3:] == "000":

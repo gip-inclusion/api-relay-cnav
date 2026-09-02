@@ -7,6 +7,7 @@ from typing import Literal, Self, TypedDict
 from xml.sax.saxutils import escape
 
 import httpx
+from django.conf import settings
 from django.utils import timezone
 
 
@@ -56,13 +57,13 @@ IDENTITY_CALL_CONTENT = """\
 
 def identity_envelope(
     *,
-    org_code: str,
+    org_code: int,
     org_label: str,
     number: str,
     name: str,
     first_names: str | None = None,
     birth_date: datetime.date,
-    sex_code: str | None = None,
+    sex_code: Literal[1, 2] | None = None,
     requested_info: str,
 ) -> str:
     request_data = [
@@ -73,10 +74,10 @@ def identity_envelope(
     if first_names:
         request_data.append(f"<giaw:LstPrnAsrDemId>{escape(first_names)}</giaw:LstPrnAsrDemId>")
     if sex_code:
-        request_data.append(f"<giaw:CdSexDem>{escape(sex_code)}</giaw:CdSexDem>")
+        request_data.append(f"<giaw:CdSexDem>{escape(str(sex_code))}</giaw:CdSexDem>")
 
     return IDENTITY_CALL_CONTENT.format(
-        org_code=org_code,
+        org_code=str(org_code),
         org_label=org_label,
         requested_info=requested_info,
         request_data="\n".join(request_data),
@@ -108,18 +109,18 @@ class InterOpsClient:
     def __init__(
         self,
         base_url: str,
-        org_code: str,
+        org_code: int,
         org_label: str,
         subject_id: str,
         identity_path: str = "/PAC-AWSICONSL/AWSICONSL/QAL1/V1",
     ) -> None:
-        self._base_url = base_url.rstrip("/")
+        self.base_url = base_url.rstrip("/")
         self.org_code = org_code
         self.org_label = org_label
         self.subject_id = subject_id
         self.identity_path = identity_path
         self.client = httpx.Client(
-            base_url=self._base_url,
+            base_url=self.base_url,
             headers={
                 "Content-Type": "application/xml",
             },
@@ -156,7 +157,7 @@ class InterOpsClient:
             content=content,
             timeout=httpx.Timeout(5, read=60),
             headers=self.interops_infos_header(),
-        ).raise_for_status()
+        )
 
     def identity(
         self,
@@ -164,7 +165,7 @@ class InterOpsClient:
         *,
         name: str,
         first_names: str | None = None,
-        sex_code: str | None = None,
+        sex_code: Literal[1, 2] | None = None,
         birth_date: datetime.date,
     ) -> InterOpsExchange:
         content = identity_envelope(
@@ -433,4 +434,14 @@ def parse_response(response_text: str) -> InterOpsResult:
             death_date=death_date(sngi_result),
             number_history=number_history(sngi_result),
         ),
+    )
+
+
+def get_client() -> InterOpsClient:
+    return InterOpsClient(
+        base_url=settings.INTEROPS_BASE_URL,
+        org_code=settings.INTEROPS_ORGANIZATION_CODE,
+        org_label=settings.INTEROPS_ORGANIZATION_LABEL,
+        subject_id=settings.INTEROPS_SUBJECT_ID,
+        identity_path=settings.INTEROPS_IDENTITY_PATH,
     )
