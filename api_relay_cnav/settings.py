@@ -15,6 +15,7 @@ import os
 from pathlib import Path
 
 import environ
+from django.core.exceptions import ImproperlyConfigured
 from django.utils.csp import CSP
 
 from api_relay_cnav.utils.token import token_hexdigest
@@ -27,14 +28,24 @@ class Environment(enum.StrEnum):
     DEV = "DEV"
 
 
+class Service(enum.StrEnum):
+    ALL = "ALL"
+    BACKOFFICE = "BACKOFFICE"
+    API = "API"
+
+
 env = environ.FileAwareEnv()
 
 env.prefix = "DJANGO_"
 ENVIRONMENT = Environment(env.str("ENVIRONMENT", choices=Environment))
+SERVICE = Service(env.str("SERVICE", choices=Service, default=Service.ALL))
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = env.str("SECRET_KEY") if ENVIRONMENT is Environment.PROD else "foobar"
+# Previous key, kept verifiable during one SECRET_KEY rotation cycle
+SECRET_KEY_FALLBACKS = [key for key in env.list("SECRET_KEY_FALLBACKS", default=[]) if key]
 
 _default_allow_list = []
 if ENVIRONMENT is Environment.DEV:
@@ -74,6 +85,8 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # No-op unless this pod uses Authentik forwardAuth (gated by AUTHENTIK_FORWARD_AUTH).
+    "api_relay_cnav.users.middleware.AuthentikRemoteUserMiddleware",
     "django.contrib.auth.middleware.LoginRequiredMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -85,7 +98,19 @@ if ENVIRONMENT is Environment.DEV:
     MIDDLEWARE.append("debug_toolbar.middleware.DebugToolbarMiddleware")
 
 
-ROOT_URLCONF = "api_relay_cnav.urls"
+# Per-service URL routing.
+# SERVICE=ALL (the DEV/TEST default) serves every service from one process via the combined urlconf
+# Each production pod serves a single service
+match SERVICE, ENVIRONMENT:
+    case Service.ALL, Environment.PROD:
+        raise ImproperlyConfigured("A production pod must set DJANGO_SERVICE to BACKOFFICE or API.")
+    case Service.ALL, _:
+        ROOT_URLCONF = "api_relay_cnav.urls"
+    case Service.BACKOFFICE, _:
+        ROOT_URLCONF = "api_relay_cnav.urls_backoffice"
+    case Service.API, _:
+        ROOT_URLCONF = "api_relay_cnav.urls_api"
+
 
 TEMPLATES = [
     {
@@ -228,4 +253,48 @@ SPECTACULAR_SETTINGS = {
     "POSTPROCESSING_HOOKS": ["drf_standardized_errors.openapi_hooks.postprocess_schema_enums"],
 }
 
-HASHED_API_TOKEN = env.str("HASHED_API_TOKEN") if ENVIRONMENT is Environment.PROD else token_hexdigest("Secret-Token")
+# Only the API service authenticates against this token.
+if ENVIRONMENT is Environment.PROD:
+    # The API pod reads it from the env and other PROD pods never serve the API
+    # So keep it unusable ("" never equals a sha512 digest)
+    HASHED_API_TOKEN = env.str("HASHED_API_TOKEN") if SERVICE is Service.API else ""
+else:
+    # DEV/TEST default
+    HASHED_API_TOKEN = token_hexdigest("Secret-Token")
+
+
+# Authentik forwardAuth (backoffice auth)
+# AuthentikRemoteUserMiddleware is always present in MIDDLEWARE but is a no-op unless this flag is set
+AUTHENTIK_FORWARD_AUTH = ENVIRONMENT is Environment.PROD and SERVICE is Service.BACKOFFICE
+AUTHENTIK_CREATE_UNKNOWN_USER = env.bool("AUTHENTIK_CREATE_UNKNOWN_USER", default=True)
+
+if AUTHENTIK_FORWARD_AUTH:
+    # No password login authorized in prod: Authentik (RemoteUser) is the only backend
+    AUTHENTICATION_BACKENDS = ["api_relay_cnav.users.backends.AuthentikRemoteUserBackend"]
+
+    # Redirect the admin logout to Authentik's sign-out (a local logout alone is useless behind forwardAuth)
+    LOGOUT_REDIRECT_URL = env.str("AUTHENTIK_LOGOUT_URL")
+
+
+# Traefik already redirects HTTP to HTTPS
+SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=False)
+# Keep plain-HTTP probes working if the redirect is enabled
+SECURE_REDIRECT_EXEMPT = [r"^healthcheck/"]
+
+# Make HSTS configurable (still disabled by default)
+SECURE_HSTS_SECONDS = env.int("SECURE_HSTS_SECONDS", default=0)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", default=False)
+SECURE_HSTS_PRELOAD = env.bool("SECURE_HSTS_PRELOAD", default=False)
+
+# Origins allowed for CSRF (admin forms on the backoffice domain)
+CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+
+# Security improvements behind the reverse proxy in PROD (Traefik)
+if ENVIRONMENT is Environment.PROD:
+    # Trust the proxy's X-Forwarded-Proto
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    USE_X_FORWARDED_HOST = True
+
+    # Force secure cookies storage
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True

@@ -1,9 +1,9 @@
-from django.contrib import admin
-from django.urls import include, path
+from api_relay_cnav import urls_api, urls_backoffice
 
 
+# Combined urlconf (SERVICE=ALL): serves all services from one process in DEV/TEST.
+# API first: its "" index would eventually shadow the backoffice's "" redirect.
 urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("healthcheck/", include("api_relay_cnav.healthcheck.urls")),
-    path("api/", include("api_relay_cnav.api.urls")),
+    *urls_api.urlpatterns,
+    *urls_backoffice.urlpatterns,
 ]

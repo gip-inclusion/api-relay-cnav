@@ -8,7 +8,7 @@ app_name = "api"
 
 urlpatterns = [
     path(
-        "openapi/",
+        "",
         SpectacularAPIView.as_view(),
         name="openapi_schema",
     ),
