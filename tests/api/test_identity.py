@@ -3,6 +3,8 @@ import uuid
 import pytest
 from django.urls import reverse
 
+from api_relay_cnav.rate_limit.limiter import Limiter
+
 
 def test_GET(api_client):
     response = api_client.get(reverse("api:identity"))
@@ -122,3 +124,26 @@ def test_invalid_numbers(api_client, number, expect_OK):
             ],
             "type": "validation_error",
         }
+
+
+def test_throttle(api_client, mocker):
+    limit = 10
+    limiter = Limiter("test", f"{limit}/min")
+    mocker.patch("api_relay_cnav.rate_limit.throttling.BurstThrottle.LIMITER", limiter)
+    data = {
+        "request_uid": str(uuid.uuid4()),
+        "number": "1234567890123",
+        "name": "Martin",
+        "first_names": "Jean Paul Jacques",
+        "sex_code": 1,
+        "birth_date": "2000-01-01",
+    }
+    for _i in range(limit):
+        response = api_client.post(reverse("api:identity"), data=data)
+        assert response.status_code == 200
+    response = api_client.post(reverse("api:identity"), data=data)
+    assert response.status_code == 429
+    assert response.headers["Retry-After"] in (
+        str(limiter.window_seconds),
+        str(limiter.window_seconds - limiter.bucket_seconds),
+    )
