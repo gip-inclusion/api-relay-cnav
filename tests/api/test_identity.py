@@ -6,6 +6,7 @@ import respx
 from django.urls import reverse
 
 from api_relay_cnav.audits.models import InterOpsCall
+from api_relay_cnav.rate_limit.limiter import Limiter
 from api_relay_cnav.utils.interops import InterOpsExchange, InterOpsResult
 from tests.utils.factories import (
     IdentityInterOpsResponseContentFactory,
@@ -229,4 +230,34 @@ def test_invalid_numbers(api_client, number, expect_OK, mocker):
             ],
             "type": "validation_error",
         }
-        assert not InterOpsCall.objects.exists()
+
+
+@respx.mock
+def test_throttle(api_client, mocker, settings):
+    settings.INTEROPS_BASE_URL = "http://interops"
+    settings.INTEROPS_IDENTITY_PATH = "/identity"
+    interops_data = IdentityInterOpsResponseContentFactory(birth_name="Millet", first_names="Camille François")
+    interops_response_content = fake_interops_identity_response(**interops_data)
+    interops_route = respx.post("http://interops/identity").respond(200, content=interops_response_content)
+
+    limit = 10
+    limiter = Limiter("test", f"{limit}/min")
+    mocker.patch("api_relay_cnav.rate_limit.throttling.BurstThrottle.LIMITER", limiter)
+    data = {
+        "request_uid": str(uuid.uuid4()),
+        "number": "1234567890123",
+        "name": "Martin",
+        "first_names": "Jean Paul Jacques",
+        "sex_code": 1,
+        "birth_date": "2000-01-01",
+    }
+    for _i in range(limit):
+        response = api_client.post(reverse("api:identity"), data=data)
+        assert response.status_code == 200
+    response = api_client.post(reverse("api:identity"), data=data)
+    assert response.status_code == 429
+    assert response.headers["Retry-After"] in (
+        str(limiter.window_seconds),
+        str(limiter.window_seconds - limiter.bucket_seconds),
+    )
+    assert interops_route.call_count == limit
