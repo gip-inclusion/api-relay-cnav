@@ -499,11 +499,11 @@ wheels = [
 
 [[package]]
 name = "itoutils"
-version = "26.5.18.0"
+version = "26.10.14.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/fe/78/55f921506105c65107d00a098e4aaf477f33586128f323acaa1c5a3fea7e/itoutils-26.5.18.0.tar.gz", hash = "sha256:855ad34c391a6b14091fcf3834c78b6e7ae6593f90d40670edb3227c8ada1bf9", size = 60655, upload-time = "2026-05-18T13:18:35.569Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/87/be/1f390017b5ce78ed7caa3dc3db27041412f14f0a795f10882ace1cb20ea2/itoutils-26.10.14.0.tar.gz", hash = "sha256:b5dd80408af9051c5eef5ca366a3676507c0e6cc1ee895a3352fb9d506860e43", size = 60033, upload-time = "2026-10-14T12:44:27.005Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a3/de/72de8900b8c0e2394b4602d9078da6c1a91cb4bbca7521f272a1d392362c/itoutils-26.5.18.0-py3-none-any.whl", hash = "sha256:1727b3347bd02790773d1d35f72951eb8af7c24dd066086bf0bfb743d19f2d43", size = 22603, upload-time = "2026-05-18T13:18:34.433Z" },
+    { url = "https://files.pythonhosted.org/packages/cc/54/fb2458b62a8f71a07e618e6617d47362244f226618893ce153083e7a397a/itoutils-26.10.14.0-py3-none-any.whl", hash = "sha256:4ea6126100a325a5ff83a7ca3524af219b340b3f77c83936d38f47b0fe225db5", size = 21343, upload-time = "2026-10-14T12:44:25.547Z" },
 ]
 
 [package.optional-dependencies]
