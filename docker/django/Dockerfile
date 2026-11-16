@@ -1,5 +1,5 @@
 ARG BASE_PYTHON_IMAGE="3.14-slim-trixie"
-ARG UV_VERSION="0.11.21"
+ARG UV_VERSION="0.13.8"
 
 # Needed to be able to use UV_VERSION ARG
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} as uv_image
