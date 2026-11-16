@@ -6,5 +6,5 @@ if [[ "$DJANGO_ENVIRONMENT" == "DEV" ]]; then
 	python manage.py migrate
 	exec python manage.py runserver 0.0.0.0:8000
 else
-	exec uwsgi --ini /app/uwsgi.ini
+	exec gunicorn --config /app/gunicorn.conf.py api_relay_cnav.wsgi:application
 fi
