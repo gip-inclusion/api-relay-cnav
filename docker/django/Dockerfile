@@ -9,10 +9,6 @@ FROM python:${BASE_PYTHON_IMAGE} AS builder_image
 
 COPY --from=uv_image /uv /bin
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
 # ---- Environnement ----
 
 # ---- Installation des dépendances Python ----
@@ -34,7 +30,7 @@ ENV PYTHONPATH=/app
 ENV DJANGO_SETTINGS_MODULE="api_relay_cnav.settings"
 
 COPY --from=builder_image /app /app
-COPY docker/django/uwsgi.ini /app/uwsgi.ini
+COPY docker/django/gunicorn.conf.py /app/gunicorn.conf.py
 COPY docker/django/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 RUN mkdir api_relay_cnav
